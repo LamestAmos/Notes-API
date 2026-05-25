@@ -1,44 +1,106 @@
 import express, { type Request, type Response } from "express";
 import logger from "./middleware/logger.js";
-import type { Note } from "./types.js";
+import type { CreatNoteQuery, Note } from "./types.js";
+import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
 const PORT = 3000;
 
-const notes: Note[] = [
+let notes: Note[] = [
   {
     id: crypto.randomUUID(),
     title: "Note 1",
-    body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
   },
   {
     id: crypto.randomUUID(),
     title: "Note 2",
-    body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
   },
 ];
 
 // middleware
 app.use(express.json());
 app.use(logger);
+app.use(errorHandler);
 
 // GET Routes
 app.get("/", (req: Request, res: Response) => {
-  res.send("Notes API with full CRUD operations. ");
+  res.status(200).send("Notes API with full CRUD operations. ");
 });
 
 app.get("/notes/", (req: Request, res: Response) => {
-  res.send(JSON.stringify(notes));
+  res.status(200).send(JSON.stringify(notes));
 });
 
-app.get("/notes/:id", (req: Request, res: Response) => {
-  const noteID = req.params.id; // typed as string
+app.get("/notes/:id", (req, res: Response) => {
+  const noteID = req.params.id;
   const note = notes.find(({ id }) => id === noteID);
   if (note == null) {
-    res.status(404).json({ message: "Note not Found" });
-    return;
+    return res.status(404).json({ message: "Note not Found" });
   }
   res.status(200).json(note);
+});
+
+// POST Route
+app.post("/notes", (req: Request<{}, {}, CreatNoteQuery>, res: Response) => {
+  const { title, content } = req.body;
+  const newNote = {
+    id: crypto.randomUUID(),
+    title,
+    content,
+  };
+  notes.push(newNote);
+  res.status(201).json(newNote);
+});
+
+// PUT Route
+app.put(
+  "/notes:id",
+  (req: Request<{ id: string }, {}, CreatNoteQuery>, res: Response) => {
+    const noteID = req.params.id;
+    const note = notes.find(({ id }) => id === noteID);
+    if (note == null) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+
+    note.title = req.body.title;
+    note.content = req.body.content;
+
+    res.status(200).json(note);
+  },
+);
+
+// PATCH Route
+app.patch(
+  "/notes:id",
+  (
+    req: Request<{ id: string }, {}, Partial<CreatNoteQuery>>,
+    res: Response,
+  ) => {
+    const noteID = req.params.id;
+    let note = notes.find(({ id }) => id === noteID);
+    if (note == null) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+
+    note = { ...note, ...req.body };
+
+    res.status(200).json(note);
+  },
+);
+
+// DELETE Route
+app.delete("/notes:id", (req, res: Response) => {
+  const noteID = req.params.id;
+  const note = notes.find(({ id }) => id === noteID);
+  if (note == null) {
+    return res.status(404).json({ message: "Note not found" });
+  }
+
+  notes = notes.filter(({ id }) => id !== note.id);
+
+  res.status(204).json(note);
 });
 
 // start server
