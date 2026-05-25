@@ -1,5 +1,7 @@
 export type Note = {
   id: string;
   title: string;
-  body: string;
+  content: string;
 };
+
+export type CreatNoteQuery = Omit<Note, "id">;
