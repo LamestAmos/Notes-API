@@ -134,7 +134,7 @@ app.post(
 
 // PUT Route
 app.put(
-  "/notes:id",
+  "/notes/:id",
   (
     req: Request<{ id: string }, {}, CreateNoteQuery>,
     res: Response,
@@ -159,7 +159,7 @@ app.put(
 
 // PATCH Route
 app.patch(
-  "/notes:id",
+  "/notes/:id",
   (
     req: Request<{ id: string }, {}, Partial<CreateNoteQuery>>,
     res: Response,
@@ -182,7 +182,7 @@ app.patch(
 );
 
 // DELETE Route
-app.delete("/notes:id", (req, res: Response) => {
+app.delete("/notes/:id", (req, res: Response) => {
   const noteID = req.params.id;
   const note = notes.find(({ id }) => id === noteID);
   if (note == null) {
