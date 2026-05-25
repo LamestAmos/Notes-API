@@ -4,4 +4,4 @@ export type Note = {
   content: string;
 };
 
-export type CreatNoteQuery = Omit<Note, "id">;
+export type CreateNoteQuery = Omit<Note, "id">;
