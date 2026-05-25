@@ -1,4 +1,8 @@
-import express, { type Request, type Response } from "express";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import logger from "./middleware/logger.js";
 import type { CreatNoteQuery, Note } from "./types.js";
 import errorHandler from "./middleware/errorHandler.js";
@@ -43,31 +47,46 @@ app.get("/notes/:id", (req, res: Response) => {
 });
 
 // POST Route
-app.post("/notes", (req: Request<{}, {}, CreatNoteQuery>, res: Response) => {
-  const { title, content } = req.body;
-  const newNote = {
-    id: crypto.randomUUID(),
-    title,
-    content,
-  };
-  notes.push(newNote);
-  res.status(201).json(newNote);
-});
+app.post(
+  "/notes",
+  (req: Request<{}, {}, CreatNoteQuery>, res: Response, next: NextFunction) => {
+    try {
+      const { title, content } = req.body;
+      const newNote = {
+        id: crypto.randomUUID(),
+        title,
+        content,
+      };
+      notes.push(newNote);
+      res.status(201).json(newNote);
+    } catch (error: any) {
+      next({ ...error, status: 400, message: "Invalid JSON" });
+    }
+  },
+);
 
 // PUT Route
 app.put(
   "/notes:id",
-  (req: Request<{ id: string }, {}, CreatNoteQuery>, res: Response) => {
-    const noteID = req.params.id;
-    const note = notes.find(({ id }) => id === noteID);
-    if (note == null) {
-      return res.status(404).json({ message: "Note not found" });
+  (
+    req: Request<{ id: string }, {}, CreatNoteQuery>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const noteID = req.params.id;
+      const note = notes.find(({ id }) => id === noteID);
+      if (note == null) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+
+      note.title = req.body.title;
+      note.content = req.body.content;
+
+      res.status(200).json(note);
+    } catch (error: any) {
+      next({ ...error, status: 400, message: "Invalid JSON" });
     }
-
-    note.title = req.body.title;
-    note.content = req.body.content;
-
-    res.status(200).json(note);
   },
 );
 
@@ -77,16 +96,21 @@ app.patch(
   (
     req: Request<{ id: string }, {}, Partial<CreatNoteQuery>>,
     res: Response,
+    next: NextFunction,
   ) => {
-    const noteID = req.params.id;
-    let note = notes.find(({ id }) => id === noteID);
-    if (note == null) {
-      return res.status(404).json({ message: "Note not found" });
+    try {
+      const noteID = req.params.id;
+      let note = notes.find(({ id }) => id === noteID);
+      if (note == null) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+
+      note = { ...note, ...req.body };
+
+      res.status(200).json(note);
+    } catch (error: any) {
+      next({ ...error, status: 400, message: "Invalid JSON" });
     }
-
-    note = { ...note, ...req.body };
-
-    res.status(200).json(note);
   },
 );
 
