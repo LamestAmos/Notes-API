@@ -4,7 +4,7 @@ import express, {
   type Response,
 } from "express";
 import logger from "./middleware/logger.js";
-import type { CreatNoteQuery, Note } from "./types.js";
+import type { CreateNoteQuery, Note } from "./types.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -21,12 +21,51 @@ let notes: Note[] = [
     title: "Note 2",
     content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
   },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 3",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 4",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 5",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 6",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 7",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 8",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 9",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Note 10",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  },
 ];
 
 // middleware
-app.use(express.json());
-app.use(logger);
-app.use(errorHandler);
+const middleware = [express.json(), logger, errorHandler];
+middleware.forEach((middleware) => app.use(middleware));
 
 // GET Routes
 app.get("/", (req: Request, res: Response) => {
@@ -34,7 +73,31 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.get("/notes/", (req: Request, res: Response) => {
-  res.status(200).send(JSON.stringify(notes));
+  const { page, limit } = Object.fromEntries(
+    Object.entries(req.query).map(([key, value]) => [
+      key,
+      parseInt(value as string),
+    ]),
+  );
+  if (page == null || limit == null) {
+    return res.status(200).send(JSON.stringify({ notes }));
+  }
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  const results: any = {
+    notes: notes.slice(startIndex, endIndex),
+  };
+
+  if (startIndex > 0) {
+    results.previous = { page: page - 1, limit };
+  }
+
+  if (endIndex < notes.length) {
+    results.next = { page: page + 1, limit };
+  }
+
+  res.status(200).send(JSON.stringify(results));
 });
 
 app.get("/notes/:id", (req, res: Response) => {
@@ -49,7 +112,11 @@ app.get("/notes/:id", (req, res: Response) => {
 // POST Route
 app.post(
   "/notes",
-  (req: Request<{}, {}, CreatNoteQuery>, res: Response, next: NextFunction) => {
+  (
+    req: Request<{}, {}, CreateNoteQuery>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       const { title, content } = req.body;
       const newNote = {
@@ -69,7 +136,7 @@ app.post(
 app.put(
   "/notes:id",
   (
-    req: Request<{ id: string }, {}, CreatNoteQuery>,
+    req: Request<{ id: string }, {}, CreateNoteQuery>,
     res: Response,
     next: NextFunction,
   ) => {
@@ -94,7 +161,7 @@ app.put(
 app.patch(
   "/notes:id",
   (
-    req: Request<{ id: string }, {}, Partial<CreatNoteQuery>>,
+    req: Request<{ id: string }, {}, Partial<CreateNoteQuery>>,
     res: Response,
     next: NextFunction,
   ) => {
