@@ -83,11 +83,11 @@ app.get("/", sValidator("query", querySchema), (ctx) => {
     previous?: { page: number; limit: number };
   } = { notes: notes.slice(startIndex, endIndex) };
 
-  if (startIndex > 0) {
+  if (endIndex < notes.length) {
     results.next = { page: page + 1, limit };
   }
 
-  if (endIndex < notes.length) {
+  if (startIndex > 0) {
     results.previous = { page: page - 1, limit };
   }
 
