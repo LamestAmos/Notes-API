@@ -1,23 +1,20 @@
 {
-  "name": "notes",
-  "version": "1.0.0",
-  "description": "Notes API with full CRUD operations.",
-  "license": "ISC",
-  "author": "LamestAmos",
+  "name": "Backend Codeathon Day 1",
   "type": "module",
-  "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch dist/index.js",
-    "ts-compile": "npx tsc --watch"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/node": "^25.9.1",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^6.0.3"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "@hono/node-server": "^1.19.14",
+    "@hono/standard-validator": "^0.2.2",
+    "hono": "^4.12.23",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "tsx": "^4.7.1",
+    "typescript": "^5.8.3"
   }
 }

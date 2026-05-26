@@ -9,7 +9,7 @@ REST API for Notes with all CRUD Operations
 
 ## Stack
 
-- Node.js + Express
+- Node.js + Hono
 - Typescript
 
 ## Installation
@@ -23,7 +23,6 @@ npm i
 ## Initialization
 
 ```bash
-npm run ts-compile
 npm run dev
 ```
 
