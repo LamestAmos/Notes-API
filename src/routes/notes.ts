@@ -2,6 +2,9 @@ import { sValidator } from "@hono/standard-validator";
 import { Hono } from "hono";
 import z from "zod";
 import type { Note } from "../types.js";
+import { db } from "../db/db.js";
+import { NoteTable } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 const app = new Hono();
 const createNoteSchema = z.object({
@@ -15,64 +18,12 @@ const updateNoteSchema = z.object({
 });
 
 const querySchema = z.object({
-  page: z.coerce.number().positive().min(1).optional(),
-  limit: z.coerce.number().positive().min(1).optional(),
+  page: z.coerce.number().int().positive().min(1).optional(),
+  limit: z.coerce.number().int().positive().min(1).optional(),
 });
 
-let notes: Note[] = [
-  {
-    id: crypto.randomUUID(),
-    title: "Note 1",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 2",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 3",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 4",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 5",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 6",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 7",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 8",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 9",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Note 10",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-];
-
-app.get("/", sValidator("query", querySchema), (ctx) => {
+app.get("/", sValidator("query", querySchema), async (ctx) => {
+  const notes = await db.query.NoteTable.findMany();
   const { page = 1, limit = 10 } = ctx.req.valid("query");
 
   const startIndex = (page - 1) * limit;
@@ -94,8 +45,10 @@ app.get("/", sValidator("query", querySchema), (ctx) => {
   return ctx.json(results);
 });
 
-app.get("/:id", (ctx) => {
-  const note = notes.find(({ id }) => id === ctx.req.param("id"));
+app.get("/:id", async (ctx) => {
+  const note = await db.query.NoteTable.findFirst({
+    where: { id: ctx.req.param("id") },
+  });
   if (note == null) {
     return ctx.json({ error: "Note not Found" }, 404);
   }
@@ -103,42 +56,41 @@ app.get("/:id", (ctx) => {
   return ctx.json(note);
 });
 
-app.post("/", sValidator("json", createNoteSchema), (ctx) => {
+app.post("/", sValidator("json", createNoteSchema), async (ctx) => {
   const { title, content } = ctx.req.valid("json");
   const note = { id: crypto.randomUUID(), title, content };
 
-  notes.push(note);
+  const [result] = await db.insert(NoteTable).values(note).returning();
 
-  return ctx.json(note, 201);
+  return ctx.json(result, 201);
 });
 
-app.put("/:id", sValidator("json", updateNoteSchema), (ctx) => {
-  const id = ctx.req.param("id");
-  const { title, content } = ctx.req.valid("json");
-  const note = notes.find((n) => id === n.id);
+app.on(
+  ["PUT", "PATCH"],
+  "/:id",
+  sValidator("json", updateNoteSchema),
+  async (ctx) => {
+    const id = ctx.req.param("id");
+    const { title, content } = ctx.req.valid("json");
 
-  if (note == null) {
-    return ctx.json({ error: "Note not Found" }, 404);
-  }
+    const [note] = await db
+      .update(NoteTable)
+      .set({ title, content })
+      .where(eq(NoteTable.id, id))
+      .returning();
 
-  if (title != null) {
-    note.title = title;
-  }
+    return ctx.json(note);
+  },
+);
 
-  if (content != null) {
-    note.content = content;
-  }
-
-  return ctx.json(note, 200);
-});
-
-app.delete("/:id", (ctx) => {
+app.delete("/:id", async (ctx) => {
   const id = ctx.req.param("id");
 
-  const noteIndex = notes.findIndex((n) => n.id === id);
-  if (noteIndex === -1) return ctx.json({ error: "Note not Found" }, 404);
-
-  notes = notes.filter((_, i) => i !== noteIndex);
+  const [result] = await db
+    .delete(NoteTable)
+    .where(eq(NoteTable.id, id))
+    .returning();
+  if (result == null) return ctx.json({ error: "Note not Found" }, 404);
 
   ctx.status(204);
   return ctx.json(null);
