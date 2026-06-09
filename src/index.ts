@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import noteRoutes from "./routes/notes.js";
+import authRoutes from "./routes/auth.js";
 import { env } from "./data/env.js";
 
 const app = new Hono();
@@ -13,6 +14,7 @@ app.get("/", (ctx) => {
 });
 
 app.route("/notes", noteRoutes);
+app.route("/auth", authRoutes);
 
 serve(
   {
