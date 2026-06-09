@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import noteRoutes from "./routes/notes.js";
+import { env } from "./data/env.js";
 
 const app = new Hono();
 
@@ -16,7 +17,7 @@ app.route("/notes", noteRoutes);
 serve(
   {
     fetch: app.fetch,
-    port: 3000,
+    port: env.PORT,
   },
   (info) => {
     console.log(`Server is running on http://localhost:${info.port}`);
