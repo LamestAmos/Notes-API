@@ -1,12 +1,13 @@
 import { sValidator } from "@hono/standard-validator";
 import { Hono } from "hono";
 import z from "zod";
-import type { Note } from "../types.js";
 import { db } from "../db/db.js";
 import { NoteTable } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { paginator } from "../middleware/paginator.js";
 
 const app = new Hono();
+
 const createNoteSchema = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
@@ -17,35 +18,20 @@ const updateNoteSchema = z.object({
   content: z.string().min(1).optional(),
 });
 
-const querySchema = z.object({
-  page: z.coerce.number().int().positive().min(1).optional(),
-  limit: z.coerce.number().int().positive().min(1).optional(),
+const getNoteSchema = z.object({
+  id: z.uuid(),
 });
 
-app.get("/", sValidator("query", querySchema), async (ctx) => {
+app.get("/", ...paginator(), async (ctx) => {
   const notes = await db.query.NoteTable.findMany();
   const { page = 1, limit = 10 } = ctx.req.valid("query");
 
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
-  const results: {
-    notes: Note[];
-    next?: { page: number; limit: number };
-    previous?: { page: number; limit: number };
-  } = { notes: notes.slice(startIndex, endIndex) };
-
-  if (endIndex < notes.length) {
-    results.next = { page: page + 1, limit };
-  }
-
-  if (startIndex > 0) {
-    results.previous = { page: page - 1, limit };
-  }
+  const results = ctx.var.paginate(notes, page, limit);
 
   return ctx.json(results);
 });
 
-app.get("/:id", async (ctx) => {
+app.get("/:id", sValidator("param", getNoteSchema), async (ctx) => {
   const note = await db.query.NoteTable.findFirst({
     where: { id: ctx.req.param("id") },
   });
@@ -83,7 +69,7 @@ app.on(
   },
 );
 
-app.delete("/:id", async (ctx) => {
+app.delete("/:id", sValidator("param", getNoteSchema), async (ctx) => {
   const id = ctx.req.param("id");
 
   const [result] = await db
