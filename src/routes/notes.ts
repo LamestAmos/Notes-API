@@ -26,7 +26,7 @@ app.get("/", ...paginator(), async (ctx) => {
   const notes = await db.query.NoteTable.findMany();
   const { page = 1, limit = 10 } = ctx.req.valid("query");
 
-  const results = ctx.var.paginate(notes, page, limit);
+  const results = ctx.var.paginate("notes", notes, page, limit);
 
   return ctx.json(results);
 });
@@ -54,6 +54,7 @@ app.post("/", sValidator("json", createNoteSchema), async (ctx) => {
 app.on(
   ["PUT", "PATCH"],
   "/:id",
+  sValidator("param", getNoteSchema),
   sValidator("json", updateNoteSchema),
   async (ctx) => {
     const id = ctx.req.param("id");
