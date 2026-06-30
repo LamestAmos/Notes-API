@@ -39,9 +39,11 @@ app.post("/login", sValidator("json", loginSchema), async (ctx) => {
     {
       exp: now + DEFAULT_JWT_EXPIRATION_TIME,
       sub: user.id,
+      role: user.role,
       email: user.email,
     },
     env.JWT_SECRET,
+    "HS256",
   );
 
   return ctx.json({ token });

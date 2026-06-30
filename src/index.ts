@@ -4,7 +4,6 @@ import { logger } from "hono/logger";
 import noteRoutes from "./routes/notes.js";
 import authRoutes from "./routes/auth.js";
 import groqRoutes from "./routes/groq.js";
-
 import { env } from "./data/env.js";
 
 const app = new Hono();
@@ -12,7 +11,9 @@ const app = new Hono();
 app.use(logger());
 
 app.get("/", (ctx) => {
-  return ctx.text("Notes API with CRUD Operations.");
+  return ctx.text(
+    "Notes API with CRUD Operations. Make sure to register and login to use!",
+  );
 });
 
 app.route("/groq", groqRoutes);

@@ -1,0 +1,2 @@
+ALTER TABLE "notes" ADD COLUMN "userID" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "notes" ADD CONSTRAINT "notes_userID_users_id_fkey" FOREIGN KEY ("userID") REFERENCES "users"("id") ON DELETE RESTRICT;

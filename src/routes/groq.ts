@@ -4,8 +4,11 @@ import { db } from "../db/db.js";
 import { getNoteSummary } from "../lib/groq.js";
 import z from "zod";
 import { RateLimitError } from "groq-sdk";
+import { getUserID } from "../lib/auth.js";
+import { jwtAuth, type JWTEnv } from "../middleware/auth.js";
 
-const app = new Hono();
+const app = new Hono<JWTEnv>();
+app.use(jwtAuth);
 
 const getNoteSchema = z.object({
   id: z.uuid(),
@@ -16,8 +19,9 @@ app.get("/", (ctx) => {
 });
 
 app.get("/:id", sValidator("param", getNoteSchema), async (ctx) => {
+  const userID = getUserID(ctx);
   const note = await db.query.NoteTable.findFirst({
-    where: { id: ctx.req.param("id") },
+    where: { id: ctx.req.param("id"), userID },
   });
   if (note == null) {
     return ctx.json({ error: "Note not Found" }, 404);
