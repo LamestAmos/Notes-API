@@ -5,8 +5,6 @@ import { db } from "../db/db.js";
 import { NoteTable } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { paginator } from "../middleware/paginator.js";
-import { jwt } from "hono/jwt";
-import { env } from "../data/env.js";
 import { getUserID } from "../lib/auth.js";
 import { jwtAuth, type JWTEnv } from "../middleware/auth.js";
 

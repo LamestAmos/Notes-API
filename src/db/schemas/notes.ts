@@ -9,4 +9,5 @@ export const NoteTable = pgTable("notes", {
   userID: uuid()
     .notNull()
     .references(() => UserTable.id, { onDelete: "restrict" }),
+  groqSummary: text(),
 });
