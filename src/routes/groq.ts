@@ -30,7 +30,7 @@ app.get(
   async (ctx) => {
     const userID = getUserID(ctx);
     const id = ctx.req.param("id");
-    const { new: newSummary } = ctx.req.valid("query");
+    const { new: newSummary = false } = ctx.req.valid("query");
     const note = await db.query.NoteTable.findFirst({
       where: { id, userID },
     });
@@ -56,7 +56,7 @@ app.get(
       if (err instanceof RateLimitError) {
         return ctx.json({ "Retry-After": err.headers.get("retry-after") }, 429);
       }
-      return ctx.json({ ...err });
+      return ctx.json({ ...err }, 500);
     }
   },
 );
